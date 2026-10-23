@@ -46,7 +46,7 @@ A focused web application that reads a folder of JSON files (one file per day co
    - Safely ignore non-JSON files or malformed files with a console warning rather than crashing the loader.
 2. **Counting Rules:**
    - Only completed (`gameState` FINAL/OFF) regular-season games count.
-   - For each pair of teams, only the first game at each team's home rink counts (by date, then start time).
+   - For each pair of teams, only the first game with each team as the designated home team counts (by date, then start time). Neutral-site games (outdoor games, Global Series; `neutralSite: true` in the API) count as the designated home team's home game, like the NHL does; this was a deliberate choice so every club stays on a balanced 62-game schedule.
    - Ranking: points, then among clubs tied on points: head-to-head points (counted games between the tied clubs), goal differential, goals for, regulation wins, regulation + overtime wins, total wins. Abbreviation is a final sort only for a stable order and is not shown as a tiebreaker. The list under the table in `app/page.tsx` must match this order.
    - A loss is an OL when the game's optional `periodType` is `"OT"` or `"SO"`; without that field it is a regulation loss.
    - The fetch script copies `periodType` from the API's `periodDescriptor.periodType` (REG/OT/SO). A shootout winner's score already includes the +1 shootout goal.

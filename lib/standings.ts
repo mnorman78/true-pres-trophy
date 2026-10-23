@@ -21,7 +21,8 @@ function compareChronologically(a: Game, b: Game): number {
 
 /**
  * Keeps only the games that count: completed regular-season games, and for each pair of
- * teams only the first game at each team's home rink (so at most two games per pair).
+ * teams only the first game with each team as the designated home team (so at most two games per
+ * pair). Neutral-site games count for their designated home team, as in the NHL.
  */
 export function selectCountedGames(games: readonly Game[]): Game[] {
   const seenMatchups = new Set<string>();
