@@ -1,3 +1,4 @@
+import { Intro } from "@/app/intro";
 import { loadGames } from "@/lib/games-loader";
 import { computeStandings, selectCountedGames } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
@@ -155,15 +156,7 @@ export default function Home() {
           </h1>
         </header>
 
-        <section className="border-b border-[#b9ad97] py-8 sm:py-10">
-          <p className="text-lg leading-relaxed text-[#35403b] sm:text-xl">
-            The NHL Presidents’ Trophy has never been respected, partially because the standings
-            can’t account for teams’ strength of schedule differences. These standings fix that by
-            limiting the Presidents’ Trophy standings to a completely balanced schedule. The only
-            games counted are the first home and away games against each team, for a total of 62
-            games (31 teams faced × 2 games each).
-          </p>
-        </section>
+        <Intro />
 
         <section className="pt-8 sm:pt-10" aria-labelledby="standings-title">
           <Standings />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { RESTORE_INTRO_SCRIPT } from "@/lib/intro-state";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,7 +16,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={inter.variable}>
+    // The restore script may set data-intro on <html> before React hydrates.
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: RESTORE_INTRO_SCRIPT }} />
+      </head>
       <body className="font-sans">{children}</body>
     </html>
   );
