@@ -169,13 +169,13 @@ export default function Home() {
           </h1>
         </header>
 
-        <section className="grid gap-8 border-b border-[#b9ad97] py-8 sm:grid-cols-[1fr_2fr] sm:gap-12 sm:py-10">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#6e685c]">
-            The full picture
-          </p>
-          <p className="max-w-2xl text-lg leading-relaxed text-[#35403b] sm:text-xl">
-            One table, every team. A league-wide view of the race that strips away divisions and
-            conferences to show who truly sits at the top of hockey.
+        <section className="border-b border-[#b9ad97] py-8 sm:py-10">
+          <p className="text-lg leading-relaxed text-[#35403b] sm:text-xl">
+            The NHL Presidents’ Trophy has never been respected, partially because the standings
+            can’t account for teams’ strength of schedule differences. These standings fix that by
+            limiting the Presidents’ Trophy standings to a completely balanced schedule. The only
+            games counted are the first home and away games against each team, for a total of 62
+            games (31 teams faced × 2 games each).
           </p>
         </section>
 
