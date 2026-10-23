@@ -1,0 +1,17 @@
+{
+  "games": [
+    {
+      "id": "2025020934",
+      "season": "20252026",
+      "gameDate": "2026-03-02",
+      "startTime": "19:00:00",
+      "homeTeam": "TOR",
+      "awayTeam": "BOS",
+      "homeScore": 4,
+      "awayScore": 2,
+      "gameState": "FINAL",
+      "gameType": "regular",
+      "venue": "Scotiabank Arena"
+    }
+  ]
+}
