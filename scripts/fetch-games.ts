@@ -17,7 +17,8 @@ const TEAM_LIST_PATH = path.join(process.cwd(), "TEAM-LIST.md");
 const REGULAR_SEASON = 2;
 const FINAL_STATES = new Set(["FINAL", "OFF"]);
 const PERIOD_TYPES: readonly PeriodType[] = ["REG", "OT", "SO"];
-const GAMES_PER_SEASON = 82;
+// 84 from 2026–27 on (82 before); used as a ceiling, so it also covers older seasons.
+const GAMES_PER_SEASON = 84;
 
 type ApiTeam = { abbrev: string; score?: number };
 type ApiGame = {

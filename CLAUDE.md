@@ -41,7 +41,7 @@ A focused web application that reads a folder of JSON files (one file per day co
    - For each pair of teams, only the first game at each team's home rink counts (by date, then start time).
    - A loss is an OL when the game's optional `periodType` is `"OT"` or `"SO"`; without that field it is a regulation loss.
    - The fetch script copies `periodType` from the API's `periodDescriptor.periodType` (REG/OT/SO). A shootout winner's score already includes the +1 shootout goal.
-3. **Data-Quality Checks (fetch script):** a final game must not be tied and must have a REG/OT/SO period type; game ids must be unique; both teams must be in `TEAM-LIST.md` and different; no team may have more than 82 regular-season games.
+3. **Data-Quality Checks (fetch script):** a final game must not be tied and must have a REG/OT/SO period type; game ids must be unique; both teams must be in `TEAM-LIST.md` and different; no team may have more than 84 regular-season games (the schedule length from 2026–27 on).
 4. **Architecture Principles:**
    - Keep calculations inside `lib/standings.ts` fully pure and decoupled from file reading or React components.
    - Use Next.js Server Components for page rendering so file system access happens cleanly on the server side without needing explicit API endpoints.
