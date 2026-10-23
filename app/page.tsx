@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
 import { loadGames } from "@/lib/games-loader";
 import { computeStandings, selectCountedGames } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
@@ -41,14 +39,14 @@ function seasonNote(counted: readonly Game[], rows: readonly StandingsRow[]) {
 }
 
 function SectionHeading({ clubCount, note }: {
-  clubCount?: number;
-  note?: { season: string; status: string } | null;
+  clubCount: number;
+  note: { season: string; status: string } | null;
 }) {
   return (
     <div className="mb-5 flex items-end justify-between gap-4">
       <div>
         <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9e3028]">
-          {clubCount === undefined ? "Loading clubs" : `All ${clubCount} clubs`}
+          {`All ${clubCount} clubs`}
         </p>
         <h2 id="standings-title" className="font-serif text-3xl tracking-tight sm:text-4xl">
           Overall standings
@@ -66,8 +64,7 @@ function SectionHeading({ clubCount, note }: {
 }
 
 async function Standings() {
-  // Read data/games/ on every request so new daily files show up without a rebuild.
-  await connection();
+  // Runs at build time; the daily deploy workflow rebuilds the site with fresh data.
   const [games, teamNames] = await Promise.all([loadGames(), loadTeamNames()]);
   const counted = selectCountedGames(games);
   const rows = computeStandings(games);
@@ -143,17 +140,6 @@ async function Standings() {
   );
 }
 
-function StandingsFallback() {
-  return (
-    <>
-      <SectionHeading />
-      <div className="border-y-2 border-[#17211d] px-3 py-8 text-center text-sm text-[#6e685c]">
-        Loading standings…
-      </div>
-    </>
-  );
-}
-
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f2ead9] px-4 py-10 text-[#17211d] sm:px-8 sm:py-16">
@@ -180,9 +166,7 @@ export default function Home() {
         </section>
 
         <section className="pt-8 sm:pt-10" aria-labelledby="standings-title">
-          <Suspense fallback={<StandingsFallback />}>
-            <Standings />
-          </Suspense>
+          <Standings />
 
           <footer className="flex flex-col gap-2 py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064] sm:flex-row sm:justify-between">
             <p>GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
