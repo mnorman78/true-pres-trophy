@@ -6,8 +6,8 @@ on:
   push:
     branches: [main]
   schedule:
-    # Daily at 10:00 UTC, after the previous night's games have finished.
-    - cron: "0 10 * * *"
+    # Daily at 08:00 UTC (4 AM Eastern in summer time, 3 AM in winter), after the previous night's games have finished.
+    - cron: "0 8 * * *"
   workflow_dispatch:
 
 permissions:

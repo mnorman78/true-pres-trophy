@@ -21,7 +21,7 @@ A focused web application that reads a folder of JSON files (one file per day co
 - `data/games/`: Folder storing individual daily JSON files (e.g., `YYYY-MM-DD.json`). Generated, not committed (gitignored).
 - `scripts/fetch-games.ts`: Fetches the current regular season from `https://api-web.nhle.com/v1/schedule/{date}` (one call per week), maps it to the `Game` type, runs data-quality checks, and only if they all pass replaces every `.json` file in `data/games/`. Exits non-zero and leaves the files alone on any problem.
 - `app/page.tsx`: Single-page UI rendering the aggregated standings table and optional stats summary. Rendered once at build time.
-- `.github/workflows/deploy.yml`: On every push to `main`, daily at 10:00 UTC, and on manual run: `npm run fetch-games`, `npm run build`, deploy `out/` to GitHub Pages. A failed data check stops the deploy, so the live site keeps the last good table.
+- `.github/workflows/deploy.yml`: On every push to `main`, daily at 08:00 UTC, and on manual run: `npm run fetch-games`, `npm run build`, deploy `out/` to GitHub Pages. A failed data check stops the deploy, so the live site keeps the last good table.
 - `lib/games-loader.ts`: Node.js file-system loader (`fs/promises`). Reads all `.json` files in `data/games/`, parses them safely, and aggregates them into a single list of games.
 - `lib/standings.ts`: Pure functional calculation engine. Takes raw game arrays and computes aggregated records (GP, W, L, OL, PTS, GF, GA, DIFF).
 - `lib/teams.ts`: Reads `TEAM-LIST.md` into an abbreviation → team name map.
