@@ -203,7 +203,8 @@ export default function Home() {
           <p className="border-t border-[#c9beaa] pt-5 text-xs leading-relaxed text-[#777064]">
             NHL, team names, and team logos are trademarks of the National Hockey League and its
             teams. This site is an independent fan project and is not affiliated with or endorsed by
-            the NHL.
+            the NHL. Visits are counted with GoatCounter, which doesn’t use cookies or collect
+            personal data.
           </p>
         </section>
       </div>

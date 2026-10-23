@@ -81,3 +81,5 @@ Built with Next.js (static export), TypeScript, and Tailwind CSS, and hosted on 
 ## Disclaimer
 
 NHL, team names, and team logos are trademarks of the National Hockey League and its teams. This site is an independent fan project and is not affiliated with or endorsed by the NHL.
+
+Visits are counted with [GoatCounter](https://www.goatcounter.com), which doesn't use cookies or collect personal data.

@@ -20,6 +20,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: RESTORE_INTRO_SCRIPT }} />
+        {/* GoatCounter visit counts (no cookies). count.js skips localhost, so dev visits aren't counted. */}
+        <script
+          data-goatcounter="https://mnorman78.goatcounter.com/count"
+          async
+          src="https://gc.zgo.at/count.js"
+        />
       </head>
       <body className="font-sans">{children}</body>
     </html>
