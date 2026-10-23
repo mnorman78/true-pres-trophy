@@ -1,5 +1,7 @@
 import { Intro } from "@/app/intro";
+import Image from "next/image";
 import { loadGames } from "@/lib/games-loader";
+import { loadLogoTeams } from "@/lib/logos";
 import { computeStandings, selectCountedGames } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
 import type { Game, StandingsRow } from "@/types/nhl";
@@ -66,7 +68,11 @@ function SectionHeading({ clubCount, note }: {
 
 async function Standings() {
   // Runs at build time; the daily deploy workflow rebuilds the site with fresh data.
-  const [games, teamNames] = await Promise.all([loadGames(), loadTeamNames()]);
+  const [games, teamNames, logoTeams] = await Promise.all([
+    loadGames(),
+    loadTeamNames(),
+    loadLogoTeams(),
+  ]);
   const counted = selectCountedGames(games);
   const rows = computeStandings(games);
 
@@ -74,20 +80,21 @@ async function Standings() {
     <>
       <SectionHeading clubCount={rows.length} note={seasonNote(counted, rows)} />
 
-      <div className="relative left-1/2 w-[max(80vw,100%)] -translate-x-1/2 overflow-hidden border-y-2 border-[#17211d]">
+      <div className="overflow-hidden border-y-2 border-[#17211d]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] border-collapse text-sm tabular-nums">
+          {/* Fixed layout: RK and Club keep their widths and the stat columns share the rest equally. */}
+          <table className="w-full min-w-[440px] table-fixed border-collapse text-sm tabular-nums">
             <thead>
               <tr className="bg-[#17211d] text-[#f2ead9]">
                 <th
                   scope="col"
-                  className="w-14 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
+                  className="sticky left-0 z-10 bg-inherit w-14 px-3 max-sm:w-12 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
                 >
                   RK
                 </th>
                 <th
                   scope="col"
-                  className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
+                  className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] w-28 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em] sm:w-72"
                 >
                   Club
                 </th>
@@ -95,7 +102,7 @@ async function Standings() {
                   <th
                     key={heading}
                     scope="col"
-                    className="w-16 px-3 py-3 text-right text-[10px] font-bold uppercase tracking-[0.15em]"
+                    className="px-3 py-3 text-right text-[10px] font-bold uppercase tracking-[0.15em]"
                   >
                     {heading}
                   </th>
@@ -113,16 +120,31 @@ async function Standings() {
                 rows.map((row, index) => (
                   <tr
                     key={row.team}
-                    className="border-b border-[#c9beaa] transition-colors last:border-0 hover:bg-[#e8ddc8]"
+                    className="border-b border-[#c9beaa] bg-[#f2ead9] transition-colors last:border-0 hover:bg-[#e8ddc8]"
                   >
-                    <td className="px-3 py-3 text-xs text-[#777064]">
+                    <td className="sticky left-0 z-10 bg-inherit px-3 py-3 text-xs text-[#777064]">
                       {String(index + 1).padStart(2, "0")}
                     </td>
-                    <th scope="row" className="px-3 py-3 text-left font-semibold">
-                      <span className="mr-4 inline-block w-8 text-[10px] font-bold tracking-[0.1em] text-[#9e3028]">
-                        {row.team}
+                    <th scope="row" className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] px-3 py-3 text-left font-semibold">
+                      <span className="flex items-center">
+                        {/* NHL logos share a 960×640 canvas, so a 3:2 box sizes them all alike. */}
+                        <span className="mr-2 inline-block h-5 w-[30px] shrink-0">
+                          {logoTeams.has(row.team) && (
+                            <Image
+                              src={`/logos/${row.team}.svg`}
+                              alt=""
+                              width={30}
+                              height={20}
+                              unoptimized
+                            />
+                          )}
+                        </span>
+                        <span className="mr-4 inline-block w-8 shrink-0 text-[10px] font-bold tracking-[0.1em] text-[#9e3028] max-sm:mr-0">
+                          {row.team}
+                        </span>
+                        {/* Phones show only the abbreviation; the name stays available to screen readers. */}
+                        <span className="max-sm:sr-only">{teamNames.get(row.team) ?? row.team}</span>
                       </span>
-                      {teamNames.get(row.team) ?? row.team}
                     </th>
                     <td className="px-3 py-3 text-right font-bold text-[#17211d]">{row.pts}</td>
                     <td className="px-3 py-3 text-right text-[#615c52]">{row.gp}</td>
@@ -150,9 +172,10 @@ export default function Home() {
             <span className="h-px w-8 bg-[#9e3028]" aria-hidden="true" />
             League-wide standings
           </div>
-          <h1 className="max-w-4xl font-serif text-[clamp(3.25rem,9vw,7.75rem)] font-medium leading-[0.82] tracking-[-0.065em] text-[#17211d]">
+          {/* Sized so "Presidents' Trophy" (about 7.3em wide in Georgia) fits the content width on one line. */}
+          <h1 className="font-serif text-[min(7.75rem,calc((100vw-4rem)/7.8))] font-medium leading-[0.82] tracking-[-0.065em] text-[#17211d]">
             The Real
-            <span className="block italic text-[#9e3028]">Presidents’ Trophy</span>
+            <span className="block whitespace-nowrap italic text-[#9e3028]">Presidents’ Trophy</span>
           </h1>
         </header>
 
@@ -165,6 +188,23 @@ export default function Home() {
             <p>GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
             <p>PTS = 2 × W + OL</p>
           </footer>
+          {/* Keep in step with the sort order in computeStandings (lib/standings.ts). */}
+          <div className="border-t border-[#c9beaa] py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064]">
+            <p className="mb-2 text-[#9e3028]">Clubs tied on points are ranked by</p>
+            <ol className="list-inside list-decimal space-y-1">
+              <li>Head-to-head points among the tied clubs</li>
+              <li>Goal differential</li>
+              <li>Goals for</li>
+              <li>Regulation wins</li>
+              <li>Regulation and overtime wins</li>
+              <li>Total wins</li>
+            </ol>
+          </div>
+          <p className="border-t border-[#c9beaa] pt-5 text-xs leading-relaxed text-[#777064]">
+            NHL, team names, and team logos are trademarks of the National Hockey League and its
+            teams. This site is an independent fan project and is not affiliated with or endorsed by
+            the NHL.
+          </p>
         </section>
       </div>
     </main>

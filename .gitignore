@@ -42,3 +42,4 @@ next-env.d.ts
 
 # game data (rebuilt by npm run fetch-games)
 /data/games/*.json
+/public/logos/

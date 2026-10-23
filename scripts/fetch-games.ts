@@ -5,6 +5,9 @@
  * date (default: today, UTC) from opening night through that date's week, checks the data, and
  * only then replaces every `.json` file in `data/games/` with one file per game date. Exits
  * non-zero without touching `data/games/` if the API shape changed or a check fails.
+ *
+ * Also saves each team's current logo to `public/logos/ABBR.svg`. A logo that fails to download
+ * is skipped with a warning (the page then shows just the abbreviation); it never fails the run.
  */
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -14,13 +17,14 @@ import type { Game, PeriodType } from "@/types/nhl";
 const API_BASE = "https://api-web.nhle.com/v1";
 const GAMES_DIR = path.join(process.cwd(), "data", "games");
 const TEAM_LIST_PATH = path.join(process.cwd(), "TEAM-LIST.md");
+const LOGOS_DIR = path.join(process.cwd(), "public", "logos");
 const REGULAR_SEASON = 2;
 const FINAL_STATES = new Set(["FINAL", "OFF"]);
 const PERIOD_TYPES: readonly PeriodType[] = ["REG", "OT", "SO"];
 // 84 from 2026–27 on (82 before); used as a ceiling, so it also covers older seasons.
 const GAMES_PER_SEASON = 84;
 
-type ApiTeam = { abbrev: string; score?: number };
+type ApiTeam = { abbrev: string; score?: number; logo?: string };
 type ApiGame = {
   id: number;
   season: number;
@@ -44,7 +48,9 @@ class DataError extends Error {}
 function isApiTeam(value: unknown): value is ApiTeam {
   const t = value as Record<string, unknown> | null;
   return (
-    typeof t?.abbrev === "string" && (t.score === undefined || typeof t.score === "number")
+    typeof t?.abbrev === "string" &&
+    (t.score === undefined || typeof t.score === "number") &&
+    (t.logo === undefined || typeof t.logo === "string")
   );
 }
 
@@ -96,10 +102,16 @@ function toGame(raw: ApiGame, gameDate: string): Game {
   };
 }
 
-/** Every regular-season game from opening night through the week containing `throughDate`. */
-async function fetchSeason(throughDate: string): Promise<Game[]> {
+/**
+ * Every regular-season game from opening night through the week containing `throughDate`, plus
+ * each team's logo URL as of its latest game in that range.
+ */
+async function fetchSeason(
+  throughDate: string,
+): Promise<{ games: Game[]; logos: Map<string, string> }> {
   const first = await fetchSchedule(throughDate);
   const games: Game[] = [];
+  const logos = new Map<string, string>();
   let weekStart: string | undefined = first.regularSeasonStartDate;
   while (weekStart && weekStart <= throughDate && weekStart <= first.regularSeasonEndDate) {
     const schedule = await fetchSchedule(weekStart);
@@ -108,12 +120,16 @@ async function fetchSeason(throughDate: string): Promise<Game[]> {
         if (!isApiGame(raw)) {
           throw new DataError(`A game on ${day.date} no longer has the expected shape.`);
         }
-        if (raw.gameType === REGULAR_SEASON) games.push(toGame(raw, day.date));
+        if (raw.gameType !== REGULAR_SEASON) continue;
+        games.push(toGame(raw, day.date));
+        for (const team of [raw.homeTeam, raw.awayTeam]) {
+          if (team.logo) logos.set(team.abbrev, team.logo);
+        }
       }
     }
     weekStart = schedule.nextStartDate;
   }
-  return games;
+  return { games, logos };
 }
 
 /** Returns a list of problems; an empty list means the data is safe to publish. */
@@ -170,6 +186,31 @@ async function writeDailyFiles(games: readonly Game[]): Promise<number> {
   return byDate.size;
 }
 
+/** Replaces `public/logos/` with one `ABBR.svg` per team; returns how many were saved. */
+async function writeLogos(logos: ReadonlyMap<string, string>): Promise<number> {
+  await rm(LOGOS_DIR, { recursive: true, force: true });
+  await mkdir(LOGOS_DIR, { recursive: true });
+  const saved = await Promise.all(
+    [...logos].map(async ([team, url]) => {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const svg = await response.text();
+        // The file is served from our own origin, so refuse anything that isn't a plain SVG.
+        if (!/<svg[\s>]/.test(svg) || /<script|\son\w+\s*=/i.test(svg)) {
+          throw new Error("not a plain SVG");
+        }
+        await writeFile(path.join(LOGOS_DIR, `${team}.svg`), svg);
+        return true;
+      } catch (error) {
+        console.warn(`Skipping ${team} logo from ${url}: ${(error as Error).message}`);
+        return false;
+      }
+    }),
+  );
+  return saved.filter(Boolean).length;
+}
+
 async function main() {
   const throughDate = process.argv[2] ?? new Date().toISOString().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(throughDate)) {
@@ -177,7 +218,7 @@ async function main() {
   }
 
   const knownTeams = new Set(parseTeamList(await readFile(TEAM_LIST_PATH, "utf8")).keys());
-  const games = await fetchSeason(throughDate);
+  const { games, logos } = await fetchSeason(throughDate);
   if (games.length === 0) throw new DataError(`No regular-season games found through ${throughDate}.`);
 
   const problems = checkGames(games, knownTeams);
@@ -192,6 +233,8 @@ async function main() {
   console.log(
     `Wrote ${games.length} games (${finals} final) to ${fileCount} files in data/games/.`,
   );
+  const logoCount = await writeLogos(logos);
+  console.log(`Saved ${logoCount} of ${logos.size} team logos to public/logos/.`);
 }
 
 main().catch((error: unknown) => {

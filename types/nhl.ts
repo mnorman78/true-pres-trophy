@@ -33,4 +33,8 @@ export type StandingsRow = {
   gf: number;
   ga: number;
   diff: number;
+  /** Regulation wins (not OT or shootout). Used as a tiebreaker, not displayed. */
+  rw: number;
+  /** Regulation + overtime wins (all wins except shootout wins). Used as a tiebreaker, not displayed. */
+  row: number;
 };

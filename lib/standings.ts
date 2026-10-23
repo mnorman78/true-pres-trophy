@@ -1,4 +1,4 @@
-import type { Game, StandingsRow } from "@/types/nhl";
+import type { Game, PeriodType, StandingsRow } from "@/types/nhl";
 
 const FINAL_STATES = new Set(["FINAL", "OFF"]);
 
@@ -35,11 +35,20 @@ export function selectCountedGames(games: readonly Game[]): Game[] {
   return counted;
 }
 
-type Result = { team: string; opponent: string; gf: number; ga: number; outcome: "W" | "L" | "OL" };
+type Result = {
+  team: string;
+  opponent: string;
+  gf: number;
+  ga: number;
+  outcome: "W" | "L" | "OL";
+  /** How the game ended; a game without `periodType` counts as a regulation result. */
+  period: PeriodType;
+};
 
 function resultsFor(game: Game): [Result, Result] {
   const homeWon = game.homeScore > game.awayScore;
-  const loserOutcome = game.periodType === "OT" || game.periodType === "SO" ? "OL" : "L";
+  const period = game.periodType ?? "REG";
+  const loserOutcome = period === "OT" || period === "SO" ? "OL" : "L";
   return [
     {
       team: game.homeTeam,
@@ -47,6 +56,7 @@ function resultsFor(game: Game): [Result, Result] {
       gf: game.homeScore,
       ga: game.awayScore,
       outcome: homeWon ? "W" : loserOutcome,
+      period,
     },
     {
       team: game.awayTeam,
@@ -54,6 +64,7 @@ function resultsFor(game: Game): [Result, Result] {
       gf: game.awayScore,
       ga: game.homeScore,
       outcome: homeWon ? loserOutcome : "W",
+      period,
     },
   ];
 }
@@ -77,8 +88,10 @@ function headToHeadPoints(tied: readonly string[], results: readonly Result[]): 
 }
 
 /**
- * Builds the standings table from raw games. Sorted by points, then head-to-head points among
- * the teams tied on points, then goal difference, then goals for, then abbreviation.
+ * Builds the standings table from raw games. Sorted by points, then among teams tied on points by
+ * head-to-head points, goal difference, goals for, regulation wins, regulation + overtime wins,
+ * total wins, and finally abbreviation (only so the order is stable; not a published tiebreaker).
+ * Keep the tiebreaker list in app/page.tsx in step with this order.
  */
 export function computeStandings(games: readonly Game[]): StandingsRow[] {
   const results = selectCountedGames(games).flatMap(resultsFor);
@@ -87,10 +100,13 @@ export function computeStandings(games: readonly Game[]): StandingsRow[] {
   for (const r of results) {
     const row =
       rows.get(r.team) ??
-      { team: r.team, gp: 0, w: 0, l: 0, ol: 0, pts: 0, gf: 0, ga: 0, diff: 0 };
+      { team: r.team, gp: 0, w: 0, l: 0, ol: 0, pts: 0, gf: 0, ga: 0, diff: 0, rw: 0, row: 0 };
     row.gp += 1;
-    if (r.outcome === "W") row.w += 1;
-    else if (r.outcome === "OL") row.ol += 1;
+    if (r.outcome === "W") {
+      row.w += 1;
+      if (r.period === "REG") row.rw += 1;
+      if (r.period !== "SO") row.row += 1;
+    } else if (r.outcome === "OL") row.ol += 1;
     else row.l += 1;
     row.pts += pointsFor(r.outcome);
     row.gf += r.gf;
@@ -117,6 +133,9 @@ export function computeStandings(games: readonly Game[]): StandingsRow[] {
           h2h.get(b.team)! - h2h.get(a.team)! ||
           b.diff - a.diff ||
           b.gf - a.gf ||
+          b.rw - a.rw ||
+          b.row - a.row ||
+          b.w - a.w ||
           a.team.localeCompare(b.team),
       );
     });
