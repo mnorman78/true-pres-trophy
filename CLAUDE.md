@@ -36,6 +36,7 @@ A focused web application that reads a folder of JSON files (one file per day co
 - Full team names for the Club column come from `TEAM-LIST.md` (abbreviation → name). An abbreviation missing from the list falls back to showing the abbreviation itself.
 - Club cell: logo (30×20 box; NHL logos share a 960×640 canvas), then the red abbreviation, then the full name. On phones (below `sm`) the full name is visually hidden (`sr-only`) and only logo + abbreviation show.
 - The table matches the content width. RK and Club are sticky on sideways scroll; Club is capped (`w-28`, `sm:w-72`) and the stat columns share the rest (`table-fixed`).
+- Site icon: a red goal with a puck. `app/icon.svg` is the browser favicon; `app/apple-icon.png` (180×180, square, rendered from the same drawing) is the iPhone home-screen icon. Change both together.
 - A trademark disclaimer for NHL names and logos sits below the table footer; keep it while logos are shown.
 - The "All N clubs" label counts teams that appear in the game data, not entries in `TEAM-LIST.md`.
 
