@@ -69,6 +69,11 @@ async function PastSeasons() {
             </Link>
           </li>
         ))}
+        <li>
+          <Link href="/winners" className="font-semibold text-[#9e3028] underline-offset-4 hover:underline">
+            All winners →
+          </Link>
+        </li>
       </ul>
     </nav>
   );

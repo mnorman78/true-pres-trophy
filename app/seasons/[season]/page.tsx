@@ -66,9 +66,12 @@ export default async function SeasonPage({ params }: PageProps<"/seasons/[season
 
   return (
     <SiteShell linkTitleHome>
-      <p className="pt-6 text-xs font-bold uppercase tracking-[0.18em]">
+      <p className="flex gap-6 pt-6 text-xs font-bold uppercase tracking-[0.18em]">
         <Link href="/" className="text-[#9e3028] underline-offset-4 hover:underline">
           ← Current standings
+        </Link>
+        <Link href="/winners" className="text-[#9e3028] underline-offset-4 hover:underline">
+          All winners
         </Link>
       </p>
       <StandingsSection
