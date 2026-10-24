@@ -276,7 +276,7 @@ export default function Home() {
           <Standings />
 
           <footer className="flex flex-col gap-2 py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064] sm:flex-row sm:justify-between">
-            <p>GC Games counted · GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
+            <p>PTS Points · GC Games counted · GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
             <p>PTS = 2 × W + OL</p>
           </footer>
         </section>
