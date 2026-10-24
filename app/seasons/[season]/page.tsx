@@ -79,6 +79,7 @@ export default async function SeasonPage({ params }: PageProps<"/seasons/[season
         teamNames={teamNames}
         logoTeams={logoTeams}
         presidentsTrophyWinner={winner}
+        tightTop
         belowTable={
           <>
             {winner && (

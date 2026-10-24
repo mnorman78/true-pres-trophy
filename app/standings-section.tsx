@@ -132,6 +132,7 @@ export function StandingsSection({
   logoTeams,
   presidentsTrophyWinner,
   belowTable,
+  tightTop = false,
 }: {
   title: string;
   /** Fine print under the title. */
@@ -145,13 +146,15 @@ export function StandingsSection({
   presidentsTrophyWinner?: string;
   /** Shown between the table and the legend. */
   belowTable?: ReactNode;
+  /** Less space above the heading, for when a link already sits just above it. */
+  tightTop?: boolean;
 }) {
   const counted = selectCountedGames(games);
   const rows = computeStandings(games);
   const uncounted = selectUncountedGames(games);
 
   return (
-    <section className="pt-8 sm:pt-10" aria-labelledby="standings-title">
+    <section className={tightTop ? "pt-3" : "pt-8 sm:pt-10"} aria-labelledby="standings-title">
       <SectionHeading title={title} note={seasonNote(counted, rows)} updated={updated} />
 
       <div className="overflow-hidden border-y-2 border-[#17211d]">
