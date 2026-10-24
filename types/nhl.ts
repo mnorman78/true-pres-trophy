@@ -55,3 +55,11 @@ export type UncountedGame = {
   /** Date of the earlier game with the same home and away team, which counts instead. */
   countedGameDate: string;
 };
+
+/** `data/season.json`, written by the fetch script next to the daily game files. */
+export type SeasonInfo = {
+  season: string;
+  regularSeasonEndDate: string;
+  /** Every game of the regular season has finished, so the data won't change any more. */
+  complete: boolean;
+};

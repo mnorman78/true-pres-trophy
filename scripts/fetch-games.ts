@@ -6,18 +6,23 @@
  * only then replaces every `.json` file in `data/games/` with one file per game date. Exits
  * non-zero without touching `data/games/` if the API shape changed or a check fails.
  *
+ * Until a game of that season has finished (offseason, preseason, opening day), it fetches the
+ * previous regular season instead, so the finished season stays up until the new one has results.
+ * It also writes `data/season.json`, which says whether the fetched regular season is complete.
+ *
  * Also saves each team's current logo to `public/logos/ABBR.svg`. A logo that fails to download
  * is skipped with a warning (the page then shows just the abbreviation); it never fails the run.
  */
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseTeamList } from "../lib/teams.ts";
-import type { Game, PeriodType } from "@/types/nhl";
+import type { Game, PeriodType, SeasonInfo } from "@/types/nhl";
 
 const API_BASE = "https://api-web.nhle.com/v1";
 const GAMES_DIR = path.join(process.cwd(), "data", "games");
 const TEAM_LIST_PATH = path.join(process.cwd(), "TEAM-LIST.md");
 const LOGOS_DIR = path.join(process.cwd(), "public", "logos");
+const SEASON_INFO_PATH = path.join(process.cwd(), "data", "season.json");
 const REGULAR_SEASON = 2;
 const FINAL_STATES = new Set(["FINAL", "OFF"]);
 const PERIOD_TYPES: readonly PeriodType[] = ["REG", "OT", "SO"];
@@ -42,6 +47,8 @@ type ApiSchedule = {
   regularSeasonEndDate: string;
   gameWeek: { date: string; games: ApiGame[] }[];
 };
+
+type ApiSeasons = { seasons: { standingsEnd?: unknown }[] };
 
 class DataError extends Error {}
 
@@ -82,6 +89,21 @@ async function fetchSchedule(date: string): Promise<ApiSchedule> {
   return body as ApiSchedule;
 }
 
+/** Last day of the latest regular season that ended before `seasonStart`. */
+async function previousSeasonEnd(seasonStart: string): Promise<string> {
+  const url = `${API_BASE}/standings-season`;
+  const response = await fetch(url);
+  if (!response.ok) throw new DataError(`${url} returned HTTP ${response.status}.`);
+  const body = (await response.json()) as Partial<ApiSeasons>;
+  if (!Array.isArray(body.seasons)) throw new DataError(`${url} no longer has the expected shape.`);
+  const ends = body.seasons
+    .map((season) => season.standingsEnd)
+    .filter((end): end is string => typeof end === "string" && end < seasonStart)
+    .sort();
+  if (ends.length === 0) throw new DataError(`${url} lists no season that ended before ${seasonStart}.`);
+  return ends[ends.length - 1];
+}
+
 /** Converts one API game into the app's `Game` shape. */
 function toGame(raw: ApiGame, gameDate: string): Game {
   const isFinal = FINAL_STATES.has(raw.gameState);
@@ -106,9 +128,12 @@ function toGame(raw: ApiGame, gameDate: string): Game {
  * Every regular-season game from opening night through the week containing `throughDate`, plus
  * each team's logo URL as of its latest game in that range.
  */
-async function fetchSeason(
-  throughDate: string,
-): Promise<{ games: Game[]; logos: Map<string, string> }> {
+async function fetchSeason(throughDate: string): Promise<{
+  games: Game[];
+  logos: Map<string, string>;
+  startDate: string;
+  endDate: string;
+}> {
   const first = await fetchSchedule(throughDate);
   const games: Game[] = [];
   const logos = new Map<string, string>();
@@ -129,7 +154,12 @@ async function fetchSeason(
     }
     weekStart = schedule.nextStartDate;
   }
-  return { games, logos };
+  return {
+    games,
+    logos,
+    startDate: first.regularSeasonStartDate,
+    endDate: first.regularSeasonEndDate,
+  };
 }
 
 /** Returns a list of problems; an empty list means the data is safe to publish. */
@@ -218,8 +248,18 @@ async function main() {
   }
 
   const knownTeams = new Set(parseTeamList(await readFile(TEAM_LIST_PATH, "utf8")).keys());
-  const { games, logos } = await fetchSeason(throughDate);
-  if (games.length === 0) throw new DataError(`No regular-season games found through ${throughDate}.`);
+  let fetchedThrough = throughDate;
+  let season = await fetchSeason(fetchedThrough);
+  if (!season.games.some((game) => FINAL_STATES.has(game.gameState))) {
+    fetchedThrough = await previousSeasonEnd(season.startDate);
+    console.log(
+      `No regular-season game has finished in the season starting ${season.startDate}; ` +
+        `fetching the season that ended ${fetchedThrough} instead.`,
+    );
+    season = await fetchSeason(fetchedThrough);
+  }
+  const { games, logos } = season;
+  if (games.length === 0) throw new DataError(`No regular-season games found through ${fetchedThrough}.`);
 
   const problems = checkGames(games, knownTeams);
   if (problems.length > 0) {
@@ -229,9 +269,18 @@ async function main() {
   }
 
   const fileCount = await writeDailyFiles(games);
+  // Complete once the whole schedule was fetched and every game in it has finished.
+  const seasonInfo: SeasonInfo = {
+    season: games[0].season,
+    regularSeasonEndDate: season.endDate,
+    complete:
+      fetchedThrough >= season.endDate && games.every((game) => FINAL_STATES.has(game.gameState)),
+  };
+  await writeFile(SEASON_INFO_PATH, `${JSON.stringify(seasonInfo, null, 2)}\n`);
   const finals = games.filter((game) => FINAL_STATES.has(game.gameState)).length;
   console.log(
-    `Wrote ${games.length} games (${finals} final) to ${fileCount} files in data/games/.`,
+    `Wrote ${games.length} games (${finals} final) to ${fileCount} files in data/games/` +
+      (seasonInfo.complete ? "; the regular season is complete." : "."),
   );
   const logoCount = await writeLogos(logos);
   console.log(`Saved ${logoCount} of ${logos.size} team logos to public/logos/.`);

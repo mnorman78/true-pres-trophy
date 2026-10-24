@@ -2,11 +2,11 @@ import { Intro } from "@/app/intro";
 import { TeamRow } from "@/app/team-row";
 import Image from "next/image";
 import { loadFaq, type FaqBlock } from "@/lib/faq";
-import { loadGames } from "@/lib/games-loader";
+import { loadGames, loadSeasonInfo } from "@/lib/games-loader";
 import { loadLogoTeams } from "@/lib/logos";
 import { computeStandings, selectCountedGames, selectUncountedGames } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
-import type { Game, StandingsRow, UncountedGame } from "@/types/nhl";
+import type { Game, SeasonInfo, StandingsRow, UncountedGame } from "@/types/nhl";
 
 const STAT_HEADINGS = ["PTS", "GC", "GP", "W", "L", "OL", "DIFF"] as const;
 
@@ -59,8 +59,21 @@ function formatBuildTime(date: Date): string {
   });
 }
 
-function SectionHeading({ note }: {
+/**
+ * Fine print under the heading. Once the regular season is complete the data no longer changes, so
+ * it names the last game instead of the build time (rebuilds continue through the offseason).
+ */
+function updatedLine(seasonInfo: SeasonInfo | null, games: readonly Game[]): string {
+  if (seasonInfo?.complete && games.length > 0) {
+    const lastGameDate = games.reduce((latest, game) => (game.gameDate > latest ? game.gameDate : latest), "");
+    return `Final standings · last game ${formatGameDate(lastGameDate)}`;
+  }
+  return `Last updated ${formatBuildTime(new Date())}`;
+}
+
+function SectionHeading({ note, updated }: {
   note: { season: string; status: string } | null;
+  updated: string;
 }) {
   return (
     <div className="mb-5 flex items-end justify-between gap-4">
@@ -68,7 +81,7 @@ function SectionHeading({ note }: {
         <h2 id="standings-title" className="font-serif text-3xl tracking-tight sm:text-4xl">
           Overall standings
         </h2>
-        <p className="mt-1 text-[11px] text-[#777064]">Last updated {formatBuildTime(new Date())}</p>
+        <p className="mt-1 text-[11px] text-[#777064]">{updated}</p>
       </div>
       {note && (
         <p className="hidden text-right text-xs leading-relaxed text-[#6e685c] sm:block">
@@ -125,8 +138,9 @@ function UncountedGames({ team, games }: { team: string; games: readonly Uncount
 
 async function Standings() {
   // Runs at build time; the daily deploy workflow rebuilds the site with fresh data.
-  const [games, teamNames, logoTeams] = await Promise.all([
+  const [games, seasonInfo, teamNames, logoTeams] = await Promise.all([
     loadGames(),
+    loadSeasonInfo(),
     loadTeamNames(),
     loadLogoTeams(),
   ]);
@@ -136,7 +150,7 @@ async function Standings() {
 
   return (
     <>
-      <SectionHeading note={seasonNote(counted, rows)} />
+      <SectionHeading note={seasonNote(counted, rows)} updated={updatedLine(seasonInfo, games)} />
 
       <div className="overflow-hidden border-y-2 border-[#17211d]">
         <div className="overflow-x-auto">

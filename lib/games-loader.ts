@@ -1,8 +1,9 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import type { Game, PeriodType } from "@/types/nhl";
+import type { Game, PeriodType, SeasonInfo } from "@/types/nhl";
 
 const GAMES_DIR = path.join(process.cwd(), "data", "games");
+const SEASON_INFO_PATH = path.join(process.cwd(), "data", "season.json");
 const PERIOD_TYPES: readonly PeriodType[] = ["REG", "OT", "SO"];
 
 function isGame(value: unknown): value is Game {
@@ -62,4 +63,22 @@ export async function loadGames(): Promise<Game[]> {
     if (!byId.has(game.id)) byId.set(game.id, game);
   }
   return [...byId.values()];
+}
+
+/** Reads `data/season.json`; returns null when it's missing or malformed (e.g. hand-made test data). */
+export async function loadSeasonInfo(): Promise<SeasonInfo | null> {
+  try {
+    const parsed = JSON.parse(await readFile(SEASON_INFO_PATH, "utf8")) as Partial<SeasonInfo>;
+    if (
+      typeof parsed.season !== "string" ||
+      typeof parsed.regularSeasonEndDate !== "string" ||
+      typeof parsed.complete !== "boolean"
+    ) {
+      console.warn(`Ignoring ${SEASON_INFO_PATH}: unexpected shape.`);
+      return null;
+    }
+    return parsed as SeasonInfo;
+  } catch {
+    return null;
+  }
 }
