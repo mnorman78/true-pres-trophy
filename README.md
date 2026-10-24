@@ -58,6 +58,8 @@ A GitHub Action rebuilds the site every day at 08:00 UTC, on every push to `main
 
 If any check fails, nothing is deployed and the site keeps the last good table.
 
+Until the first game of a new season has finished, the site keeps showing the last finished season. When a regular season is complete, its games are saved to `data/seasons/YYYY-YY.json` and committed to the repo automatically, so each finished season keeps its own page at `/seasons/YYYY-YY`.
+
 ## Development
 
 Requires Node 22.18 or later (`.nvmrc` pins 24).

@@ -6,7 +6,7 @@ const GAMES_DIR = path.join(process.cwd(), "data", "games");
 const SEASON_INFO_PATH = path.join(process.cwd(), "data", "season.json");
 const PERIOD_TYPES: readonly PeriodType[] = ["REG", "OT", "SO"];
 
-function isGame(value: unknown): value is Game {
+export function isGame(value: unknown): value is Game {
   if (typeof value !== "object" || value === null) return false;
   const g = value as Record<string, unknown>;
   return (

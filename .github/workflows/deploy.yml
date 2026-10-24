@@ -1,5 +1,7 @@
 # Fetches the season from the NHL API, builds the static site, and deploys it to GitHub Pages.
 # If the fetch script's data checks fail, nothing is deployed and the live site keeps the last good table.
+# When a regular season finishes, the fetch script saves it to data/seasons/ and this workflow commits
+# that file to main, so the season's archive page survives after the site moves on to the next season.
 name: Deploy to GitHub Pages
 
 on:
@@ -22,6 +24,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      # write: to commit a newly finished season to data/seasons/.
+      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -30,6 +35,19 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run fetch-games
+      # Pushes made with the workflow's token don't start another run; this run's build already has
+      # the file. If the push fails (e.g. main moved on), the site still deploys and tomorrow's run
+      # tries again, since the season file still won't be in the repo.
+      - name: Commit a newly finished season
+        continue-on-error: true
+        run: |
+          if [ -n "$(git status --porcelain -- data/seasons)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/seasons
+            git commit -m "Archive the finished regular season"
+            git push origin HEAD:main
+          fi
       - run: npm run build
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5

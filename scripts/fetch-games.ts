@@ -8,13 +8,15 @@
  *
  * Until a game of that season has finished (offseason, preseason, opening day), it fetches the
  * previous regular season instead, so the finished season stays up until the new one has results.
- * It also writes `data/season.json`, which says whether the fetched regular season is complete.
+ * It also writes `data/season.json`, which says whether the fetched regular season is complete,
+ * and once it is, saves it to `data/seasons/YYYY-YY.json` (if not already there) for the archive.
  *
  * Also saves each team's current logo to `public/logos/ABBR.svg`. A logo that fails to download
  * is skipped with a warning (the page then shows just the abbreviation); it never fails the run.
  */
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { archiveSeason, seasonSlug } from "../lib/seasons.ts";
 import { parseTeamList } from "../lib/teams.ts";
 import type { Game, PeriodType, SeasonInfo } from "@/types/nhl";
 
@@ -282,6 +284,9 @@ async function main() {
     `Wrote ${games.length} games (${finals} final) to ${fileCount} files in data/games/` +
       (seasonInfo.complete ? "; the regular season is complete." : "."),
   );
+  if (seasonInfo.complete && (await archiveSeason(seasonInfo.season, games))) {
+    console.log(`Archived the finished season to data/seasons/${seasonSlug(seasonInfo.season)}.json.`);
+  }
   const logoCount = await writeLogos(logos);
   console.log(`Saved ${logoCount} of ${logos.size} team logos to public/logos/.`);
 }
