@@ -123,7 +123,16 @@ function UncountedGames({ team, games, complete }: {
  * Heading, standings table and legend for one season's games. Used by the home page (current season)
  * and the season archive pages.
  */
-export function StandingsSection({ title, updated, games, complete, teamNames, logoTeams, belowTable }: {
+export function StandingsSection({
+  title,
+  updated,
+  games,
+  complete,
+  teamNames,
+  logoTeams,
+  presidentsTrophyWinner,
+  belowTable,
+}: {
   title: string;
   /** Fine print under the title. */
   updated: string;
@@ -132,6 +141,8 @@ export function StandingsSection({ title, updated, games, complete, teamNames, l
   complete: boolean;
   teamNames: ReadonlyMap<string, string>;
   logoTeams: ReadonlySet<string>;
+  /** Club that won the NHL's Presidents' Trophy, marked with an asterisk (past seasons only). */
+  presidentsTrophyWinner?: string;
   /** Shown between the table and the legend. */
   belowTable?: ReactNode;
 }) {
@@ -202,6 +213,12 @@ export function StandingsSection({ title, updated, games, complete, teamNames, l
                         </span>
                         <span className="mr-4 inline-block w-8 shrink-0 text-[10px] font-bold tracking-[0.1em] text-[#9e3028] max-sm:mr-0">
                           {row.team}
+                          {row.team === presidentsTrophyWinner && (
+                            <>
+                              <span aria-hidden="true">*</span>
+                              <span className="sr-only"> (won the NHL’s Presidents’ Trophy)</span>
+                            </>
+                          )}
                         </span>
                         {/* Phones show only the abbreviation; the name stays available to screen readers. */}
                         <span className="max-sm:sr-only">{teamNames.get(row.team) ?? row.team}</span>

@@ -4,6 +4,7 @@ import { SiteShell } from "@/app/site-shell";
 import { finalStandingsLine, StandingsSection } from "@/app/standings-section";
 import { loadLogoTeams } from "@/lib/logos";
 import { listArchivedSeasons, loadArchivedSeason, seasonTitle } from "@/lib/seasons";
+import { nhlPointsLeader } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
 
 // One static page per file in data/seasons/; any other season is a 404.
@@ -61,6 +62,7 @@ export default async function SeasonPage({ params }: PageProps<"/seasons/[season
 
   // Newest first, so the season after this one comes just before it.
   const index = slugs.indexOf(season);
+  const winner = nhlPointsLeader(archived.games);
 
   return (
     <SiteShell linkTitleHome>
@@ -76,7 +78,18 @@ export default async function SeasonPage({ params }: PageProps<"/seasons/[season
         complete
         teamNames={teamNames}
         logoTeams={logoTeams}
-        belowTable={<SeasonNav older={slugs[index + 1]} newer={slugs[index - 1]} />}
+        presidentsTrophyWinner={winner}
+        belowTable={
+          <>
+            {winner && (
+              <p className="pt-4 text-xs text-[#615c52]">
+                * {teamNames.get(winner) ?? winner} won the NHL’s {seasonTitle(season)} Presidents’
+                Trophy, counting every regular-season game under the NHL’s rules.
+              </p>
+            )}
+            <SeasonNav older={slugs[index + 1]} newer={slugs[index - 1]} />
+          </>
+        }
       />
     </SiteShell>
   );

@@ -101,20 +101,17 @@ function headToHeadPoints(tied: readonly string[], results: readonly Result[]): 
   return points;
 }
 
-/**
- * Builds the standings table from raw games. Sorted by points, then among teams tied on points by
- * head-to-head points, goal difference, goals for, regulation wins, regulation + overtime wins,
- * total wins, and finally abbreviation (only so the order is stable; not a published tiebreaker).
- * Keep the tiebreaker list in app/page.tsx in step with this order.
- */
-export function computeStandings(games: readonly Game[]): StandingsRow[] {
-  const results = selectCountedGames(games).flatMap(resultsFor);
-
+/** Completed regular-season games per team, counted or not. */
+function playedCounts(games: readonly Game[]): Map<string, number> {
   const played = new Map<string, number>();
   for (const game of games.filter(isCompletedRegularSeason)) {
     for (const team of [game.homeTeam, game.awayTeam]) played.set(team, (played.get(team) ?? 0) + 1);
   }
+  return played;
+}
 
+/** One row per team, totalling `results`. */
+function tallyRows(results: readonly Result[], played: ReadonlyMap<string, number>): StandingsRow[] {
   const rows = new Map<string, StandingsRow>();
   for (const r of results) {
     const row =
@@ -138,9 +135,22 @@ export function computeStandings(games: readonly Game[]): StandingsRow[] {
     row.diff = row.gf - row.ga;
     rows.set(r.team, row);
   }
+  return [...rows.values()];
+}
+
+/**
+ * Builds the standings table from raw games. Sorted by points, then among teams tied on points by
+ * head-to-head points, goal difference, goals for, regulation wins, regulation + overtime wins,
+ * total wins, and finally abbreviation (only so the order is stable; not a published tiebreaker).
+ * Keep the "What are the tiebreakers?" list in FAQ.md in step with this order.
+ */
+export function computeStandings(games: readonly Game[]): StandingsRow[] {
+  const results = selectCountedGames(games).flatMap(resultsFor);
+
+  const rows = tallyRows(results, playedCounts(games));
 
   const byPoints = new Map<number, StandingsRow[]>();
-  for (const row of rows.values()) {
+  for (const row of rows) {
     byPoints.set(row.pts, [...(byPoints.get(row.pts) ?? []), row]);
   }
 
@@ -189,4 +199,24 @@ export function selectUncountedGames(games: readonly Game[]): Map<string, Uncoun
     }
   }
   return byTeam;
+}
+
+/**
+ * The club with the most points under the NHL's own rules (every completed regular-season game
+ * counts): the Presidents' Trophy winner once the season is over. Ties on points are broken as the
+ * NHL does: regulation wins, then regulation + overtime wins, then total wins. Returns undefined
+ * if clubs are still tied after that (the NHL goes on to head-to-head results, not modelled here).
+ */
+export function nhlPointsLeader(games: readonly Game[]): string | undefined {
+  const rows = tallyRows(games.filter(isCompletedRegularSeason).flatMap(resultsFor), playedCounts(games));
+  const ranked = rows.sort((a, b) => b.pts - a.pts || b.rw - a.rw || b.row - a.row || b.w - a.w);
+  const [first, second] = ranked;
+  if (!first) return undefined;
+  const tied =
+    second &&
+    second.pts === first.pts &&
+    second.rw === first.rw &&
+    second.row === first.row &&
+    second.w === first.w;
+  return tied ? undefined : first.team;
 }
