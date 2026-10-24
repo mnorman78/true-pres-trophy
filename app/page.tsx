@@ -43,6 +43,22 @@ function seasonNote(counted: readonly Game[], rows: readonly StandingsRow[]) {
   };
 }
 
+/**
+ * When the site was built, which is when the data was last fetched, in Eastern time (the NHL's home
+ * time zone): "Oct 24, 2026, 4:02 AM EDT".
+ */
+function formatBuildTime(date: Date): string {
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+  });
+}
+
 function SectionHeading({ note }: {
   note: { season: string; status: string } | null;
 }) {
@@ -52,6 +68,7 @@ function SectionHeading({ note }: {
         <h2 id="standings-title" className="font-serif text-3xl tracking-tight sm:text-4xl">
           Overall standings
         </h2>
+        <p className="mt-1 text-[11px] text-[#777064]">Last updated {formatBuildTime(new Date())}</p>
       </div>
       {note && (
         <p className="hidden text-right text-xs leading-relaxed text-[#6e685c] sm:block">

@@ -40,6 +40,7 @@ A focused web application that reads a folder of JSON files (one file per day co
 - The table matches the content width. RK and Club are sticky on sideways scroll; Club is capped (`w-28`, `sm:w-72`) and the stat columns share the rest (`table-fixed`).
 - Site icon: a red goal with a puck. `app/icon.svg` is the browser favicon; `app/apple-icon.png` (180×180, square, rendered from the same drawing) is the iPhone home-screen icon. Change both together.
 - Analytics: GoatCounter script in `app/layout.tsx` `<head>` (site code `mnorman78`). No cookies, so no consent banner; the footer disclaimer mentions it.
+- Under the "Overall standings" heading, a fine-print "Last updated" line shows when the site was built (date and time, Eastern), since each build fetches fresh data.
 - Below the table: the legend, then an FAQ section (`h2` "FAQ", one `h3` per question) read from `FAQ.md`, then the page footer with the trademark disclaimer for NHL names and logos; keep the disclaimer while logos are shown.
 
 ## Core Logic & Domain Rules
