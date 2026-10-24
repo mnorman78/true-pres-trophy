@@ -41,7 +41,6 @@ A focused web application that reads a folder of JSON files (one file per day co
 - Site icon: a red goal with a puck. `app/icon.svg` is the browser favicon; `app/apple-icon.png` (180×180, square, rendered from the same drawing) is the iPhone home-screen icon. Change both together.
 - Analytics: GoatCounter script in `app/layout.tsx` `<head>` (site code `mnorman78`). No cookies, so no consent banner; the footer disclaimer mentions it.
 - Below the table: the legend, then an FAQ section (`h2` "FAQ", one `h3` per question) read from `FAQ.md`, then the page footer with the trademark disclaimer for NHL names and logos; keep the disclaimer while logos are shown.
-- The "All N clubs" label counts teams that appear in the game data, not entries in `TEAM-LIST.md`.
 
 ## Core Logic & Domain Rules
 1. **File Ingestion Rules:**

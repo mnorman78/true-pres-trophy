@@ -43,16 +43,12 @@ function seasonNote(counted: readonly Game[], rows: readonly StandingsRow[]) {
   };
 }
 
-function SectionHeading({ clubCount, note }: {
-  clubCount: number;
+function SectionHeading({ note }: {
   note: { season: string; status: string } | null;
 }) {
   return (
     <div className="mb-5 flex items-end justify-between gap-4">
       <div>
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9e3028]">
-          {`All ${clubCount} clubs`}
-        </p>
         <h2 id="standings-title" className="font-serif text-3xl tracking-tight sm:text-4xl">
           Overall standings
         </h2>
@@ -123,7 +119,7 @@ async function Standings() {
 
   return (
     <>
-      <SectionHeading clubCount={rows.length} note={seasonNote(counted, rows)} />
+      <SectionHeading note={seasonNote(counted, rows)} />
 
       <div className="overflow-hidden border-y-2 border-[#17211d]">
         <div className="overflow-x-auto">
