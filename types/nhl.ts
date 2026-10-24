@@ -25,7 +25,10 @@ export type DailyGamesFile = {
 /** One team's aggregated record, ready to display. */
 export type StandingsRow = {
   team: string;
+  /** Games counted under the home-and-away rule. */
   gp: number;
+  /** All completed regular-season games, counted or not. */
+  played: number;
   w: number;
   l: number;
   ol: number;

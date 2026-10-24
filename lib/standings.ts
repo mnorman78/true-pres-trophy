@@ -97,11 +97,21 @@ function headToHeadPoints(tied: readonly string[], results: readonly Result[]): 
 export function computeStandings(games: readonly Game[]): StandingsRow[] {
   const results = selectCountedGames(games).flatMap(resultsFor);
 
+  const played = new Map<string, number>();
+  for (const game of games.filter(isCompletedRegularSeason)) {
+    for (const team of [game.homeTeam, game.awayTeam]) played.set(team, (played.get(team) ?? 0) + 1);
+  }
+
   const rows = new Map<string, StandingsRow>();
   for (const r of results) {
     const row =
       rows.get(r.team) ??
-      { team: r.team, gp: 0, w: 0, l: 0, ol: 0, pts: 0, gf: 0, ga: 0, diff: 0, rw: 0, row: 0 };
+      {
+        team: r.team,
+        gp: 0,
+        played: played.get(r.team) ?? 0,
+        w: 0, l: 0, ol: 0, pts: 0, gf: 0, ga: 0, diff: 0, rw: 0, row: 0,
+      };
     row.gp += 1;
     if (r.outcome === "W") {
       row.w += 1;

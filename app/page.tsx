@@ -1,12 +1,13 @@
 import { Intro } from "@/app/intro";
 import Image from "next/image";
+import { loadFaq, type FaqBlock } from "@/lib/faq";
 import { loadGames } from "@/lib/games-loader";
 import { loadLogoTeams } from "@/lib/logos";
 import { computeStandings, selectCountedGames } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
 import type { Game, StandingsRow } from "@/types/nhl";
 
-const STAT_HEADINGS = ["PTS", "GP", "W", "L", "OL", "DIFF"] as const;
+const STAT_HEADINGS = ["PTS", "GC", "GP", "W", "L", "OL", "DIFF"] as const;
 
 function formatDiff(diff: number): string {
   if (diff > 0) return `+${diff}`;
@@ -148,6 +149,7 @@ async function Standings() {
                     </th>
                     <td className="px-3 py-3 text-right font-bold text-[#17211d]">{row.pts}</td>
                     <td className="px-3 py-3 text-right text-[#615c52]">{row.gp}</td>
+                    <td className="px-3 py-3 text-right text-[#615c52]">{row.played}</td>
                     <td className="px-3 py-3 text-right text-[#615c52]">{row.w}</td>
                     <td className="px-3 py-3 text-right text-[#615c52]">{row.l}</td>
                     <td className="px-3 py-3 text-right text-[#615c52]">{row.ol}</td>
@@ -160,6 +162,48 @@ async function Standings() {
         </div>
       </div>
     </>
+  );
+}
+
+const ANSWER_TEXT = "text-sm leading-relaxed text-[#615c52]";
+
+function FaqAnswerBlock({ block }: { block: FaqBlock }) {
+  if (block.kind === "paragraph") return <p className={ANSWER_TEXT}>{block.text}</p>;
+  const List = block.kind === "ordered" ? "ol" : "ul";
+  return (
+    <List className={`${ANSWER_TEXT} list-inside space-y-1 ${block.kind === "ordered" ? "list-decimal" : "list-disc"}`}>
+      {block.items.map((item, index) => (
+        <li key={index}>{item}</li>
+      ))}
+    </List>
+  );
+}
+
+/** Questions and answers from FAQ.md, read at build time. */
+async function Faq() {
+  const entries = await loadFaq();
+  if (entries.length === 0) return null;
+
+  return (
+    <section className="border-t border-[#17211d] py-8 sm:py-10" aria-labelledby="faq-title">
+      <h2 id="faq-title" className="mb-6 font-serif text-3xl tracking-tight sm:text-4xl">
+        FAQ
+      </h2>
+      <div className="space-y-8">
+        {entries.map((entry) => (
+          <div key={entry.question}>
+            <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#9e3028]">
+              {entry.question}
+            </h3>
+            <div className="space-y-2">
+              {entry.blocks.map((block, index) => (
+                <FaqAnswerBlock key={index} block={block} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -185,28 +229,21 @@ export default function Home() {
           <Standings />
 
           <footer className="flex flex-col gap-2 py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064] sm:flex-row sm:justify-between">
-            <p>GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
+            <p>GC Games counted · GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
             <p>PTS = 2 × W + OL</p>
           </footer>
-          {/* Keep in step with the sort order in computeStandings (lib/standings.ts). */}
-          <div className="border-t border-[#c9beaa] py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064]">
-            <p className="mb-2 text-[#9e3028]">Clubs tied on points are ranked by</p>
-            <ol className="list-inside list-decimal space-y-1">
-              <li>Head-to-head points among the tied clubs</li>
-              <li>Goal differential</li>
-              <li>Goals for</li>
-              <li>Regulation wins</li>
-              <li>Regulation and overtime wins</li>
-              <li>Total wins</li>
-            </ol>
-          </div>
+        </section>
+
+        <Faq />
+
+        <footer>
           <p className="border-t border-[#c9beaa] pt-5 text-xs leading-relaxed text-[#777064]">
             NHL, team names, and team logos are trademarks of the National Hockey League and its
             teams. This site is an independent fan project and is not affiliated with or endorsed by
             the NHL. Visits are counted with GoatCounter, which doesn’t use cookies or collect
             personal data.
           </p>
-        </section>
+        </footer>
       </div>
     </main>
   );
