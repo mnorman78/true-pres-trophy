@@ -1,4 +1,4 @@
-import type { Game, PeriodType, StandingsRow } from "@/types/nhl";
+import type { Game, PeriodType, StandingsRow, UncountedGame } from "@/types/nhl";
 
 const FINAL_STATES = new Set(["FINAL", "OFF"]);
 
@@ -19,21 +19,34 @@ function compareChronologically(a: Game, b: Game): number {
   );
 }
 
+/** Splits completed regular-season games into those that count and the repeats of a counted matchup. */
+function partitionByMatchup(games: readonly Game[]): {
+  counted: Game[];
+  repeats: { game: Game; countedGame: Game }[];
+} {
+  const firstByMatchup = new Map<string, Game>();
+  const counted: Game[] = [];
+  const repeats: { game: Game; countedGame: Game }[] = [];
+  for (const game of games.filter(isCompletedRegularSeason).sort(compareChronologically)) {
+    const matchup = `${game.awayTeam}@${game.homeTeam}`;
+    const countedGame = firstByMatchup.get(matchup);
+    if (countedGame) {
+      repeats.push({ game, countedGame });
+    } else {
+      firstByMatchup.set(matchup, game);
+      counted.push(game);
+    }
+  }
+  return { counted, repeats };
+}
+
 /**
  * Keeps only the games that count: completed regular-season games, and for each pair of
  * teams only the first game with each team as the designated home team (so at most two games per
  * pair). Neutral-site games count for their designated home team, as in the NHL.
  */
 export function selectCountedGames(games: readonly Game[]): Game[] {
-  const seenMatchups = new Set<string>();
-  const counted: Game[] = [];
-  for (const game of games.filter(isCompletedRegularSeason).sort(compareChronologically)) {
-    const matchup = `${game.awayTeam}@${game.homeTeam}`;
-    if (seenMatchups.has(matchup)) continue;
-    seenMatchups.add(matchup);
-    counted.push(game);
-  }
-  return counted;
+  return partitionByMatchup(games).counted;
 }
 
 type Result = {
@@ -150,4 +163,30 @@ export function computeStandings(games: readonly Game[]): StandingsRow[] {
           a.team.localeCompare(b.team),
       );
     });
+}
+
+/**
+ * Each team's completed regular-season games that don't count, oldest first: repeats of a matchup
+ * (same home and away team) that already counted earlier in the season.
+ */
+export function selectUncountedGames(games: readonly Game[]): Map<string, UncountedGame[]> {
+  const byTeam = new Map<string, UncountedGame[]>();
+  for (const { game, countedGame } of partitionByMatchup(games).repeats) {
+    for (const r of resultsFor(game)) {
+      const list = byTeam.get(r.team) ?? [];
+      list.push({
+        id: game.id,
+        gameDate: game.gameDate,
+        opponent: r.opponent,
+        isHome: r.team === game.homeTeam,
+        gf: r.gf,
+        ga: r.ga,
+        outcome: r.outcome,
+        period: r.period,
+        countedGameDate: countedGame.gameDate,
+      });
+      byTeam.set(r.team, list);
+    }
+  }
+  return byTeam;
 }

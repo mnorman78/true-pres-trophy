@@ -1,11 +1,12 @@
 import { Intro } from "@/app/intro";
+import { TeamRow } from "@/app/team-row";
 import Image from "next/image";
 import { loadFaq, type FaqBlock } from "@/lib/faq";
 import { loadGames } from "@/lib/games-loader";
 import { loadLogoTeams } from "@/lib/logos";
-import { computeStandings, selectCountedGames } from "@/lib/standings";
+import { computeStandings, selectCountedGames, selectUncountedGames } from "@/lib/standings";
 import { loadTeamNames } from "@/lib/teams";
-import type { Game, StandingsRow } from "@/types/nhl";
+import type { Game, StandingsRow, UncountedGame } from "@/types/nhl";
 
 const STAT_HEADINGS = ["PTS", "GC", "GP", "W", "L", "OL", "DIFF"] as const;
 
@@ -67,6 +68,48 @@ function SectionHeading({ clubCount, note }: {
   );
 }
 
+/** "2026-10-11" → "Oct 11" */
+function formatShortDate(date: string): string {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/** The panel under a team's row: its completed games that don't count, and why. */
+function UncountedGames({ team, games }: { team: string; games: readonly UncountedGame[] }) {
+  if (games.length === 0) {
+    return <p className="text-xs text-[#615c52]">Every {team} game so far has counted.</p>;
+  }
+  return (
+    <>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#9e3028]">
+        {games.length === 1 ? "1 game not counted" : `${games.length} games not counted`}
+      </p>
+      <ul className="space-y-1.5 text-xs leading-snug text-[#35403b]">
+        {games.map((game) => (
+          <li key={game.id} className="sm:flex sm:gap-3">
+            <span className="inline-block w-12 font-semibold tabular-nums sm:shrink-0">
+              {formatShortDate(game.gameDate)}
+            </span>
+            <span className="inline-block w-14 sm:shrink-0">
+              {game.isHome ? "vs" : "@"} {game.opponent}
+            </span>
+            <span className="inline-block tabular-nums sm:w-24 sm:shrink-0">
+              {game.outcome} {game.gf}–{game.ga}
+              {game.period !== "REG" && ` ${game.period}`}
+            </span>
+            <span className="block text-[#777064] max-sm:pl-12 sm:inline">
+              {game.isHome
+                ? `Already hosted ${game.opponent} on ${formatShortDate(game.countedGameDate)}`
+                : `Already played at ${game.opponent} on ${formatShortDate(game.countedGameDate)}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 async function Standings() {
   // Runs at build time; the daily deploy workflow rebuilds the site with fresh data.
   const [games, teamNames, logoTeams] = await Promise.all([
@@ -76,6 +119,7 @@ async function Standings() {
   ]);
   const counted = selectCountedGames(games);
   const rows = computeStandings(games);
+  const uncounted = selectUncountedGames(games);
 
   return (
     <>
@@ -119,14 +163,12 @@ async function Standings() {
                 </tr>
               ) : (
                 rows.map((row, index) => (
-                  <tr
+                  <TeamRow
                     key={row.team}
-                    className="border-b border-[#c9beaa] bg-[#f2ead9] transition-colors last:border-0 hover:bg-[#e8ddc8]"
-                  >
-                    <td className="sticky left-0 z-10 bg-inherit px-3 py-3 text-xs text-[#777064]">
-                      {String(index + 1).padStart(2, "0")}
-                    </td>
-                    <th scope="row" className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] px-3 py-3 text-left font-semibold">
+                    team={row.team}
+                    columnCount={2 + STAT_HEADINGS.length}
+                    rank={String(index + 1).padStart(2, "0")}
+                    club={
                       <span className="flex items-center">
                         {/* NHL logos share a 960×640 canvas, so a 3:2 box sizes them all alike. */}
                         <span className="mr-2 inline-block h-5 w-[30px] shrink-0">
@@ -146,15 +188,20 @@ async function Standings() {
                         {/* Phones show only the abbreviation; the name stays available to screen readers. */}
                         <span className="max-sm:sr-only">{teamNames.get(row.team) ?? row.team}</span>
                       </span>
-                    </th>
-                    <td className="px-3 py-3 text-right font-bold text-[#17211d]">{row.pts}</td>
-                    <td className="px-3 py-3 text-right text-[#615c52]">{row.gp}</td>
-                    <td className="px-3 py-3 text-right text-[#615c52]">{row.played}</td>
-                    <td className="px-3 py-3 text-right text-[#615c52]">{row.w}</td>
-                    <td className="px-3 py-3 text-right text-[#615c52]">{row.l}</td>
-                    <td className="px-3 py-3 text-right text-[#615c52]">{row.ol}</td>
-                    <td className="px-3 py-3 text-right text-[#615c52]">{formatDiff(row.diff)}</td>
-                  </tr>
+                    }
+                    stats={
+                      <>
+                        <td className="px-3 py-3 text-right font-bold text-[#17211d]">{row.pts}</td>
+                        <td className="px-3 py-3 text-right text-[#615c52]">{row.gp}</td>
+                        <td className="px-3 py-3 text-right text-[#615c52]">{row.played}</td>
+                        <td className="px-3 py-3 text-right text-[#615c52]">{row.w}</td>
+                        <td className="px-3 py-3 text-right text-[#615c52]">{row.l}</td>
+                        <td className="px-3 py-3 text-right text-[#615c52]">{row.ol}</td>
+                        <td className="px-3 py-3 text-right text-[#615c52]">{formatDiff(row.diff)}</td>
+                      </>
+                    }
+                    details={<UncountedGames team={row.team} games={uncounted.get(row.team) ?? []} />}
+                  />
                 ))
               )}
             </tbody>

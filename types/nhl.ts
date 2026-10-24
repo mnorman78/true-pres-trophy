@@ -41,3 +41,17 @@ export type StandingsRow = {
   /** Regulation + overtime wins (all wins except shootout wins). Used as a tiebreaker, not displayed. */
   row: number;
 };
+
+/** A completed game that doesn't count toward the standings, from one team's side. */
+export type UncountedGame = {
+  id: string;
+  gameDate: string;
+  opponent: string;
+  isHome: boolean;
+  gf: number;
+  ga: number;
+  outcome: "W" | "L" | "OL";
+  period: PeriodType;
+  /** Date of the earlier game with the same home and away team, which counts instead. */
+  countedGameDate: string;
+};
