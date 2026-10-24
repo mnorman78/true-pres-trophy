@@ -9,9 +9,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Makes the share image (app/opengraph-image.png) an absolute URL, which link previews need.
+  metadataBase: new URL("https://presidents-trophy.com"),
   title: "The Real Presidents’ Trophy",
   description:
     "League-wide NHL standings counting only the first home and away game between each pair of clubs.",
+  openGraph: { type: "website", siteName: "The Real Presidents’ Trophy" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
