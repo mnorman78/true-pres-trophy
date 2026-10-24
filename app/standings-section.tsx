@@ -1,5 +1,6 @@
 import { TeamRow } from "@/app/team-row";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { computeStandings, selectCountedGames, selectUncountedGames } from "@/lib/standings";
 import type { Game, StandingsRow, UncountedGame } from "@/types/nhl";
 
@@ -122,7 +123,7 @@ function UncountedGames({ team, games, complete }: {
  * Heading, standings table and legend for one season's games. Used by the home page (current season)
  * and the season archive pages.
  */
-export function StandingsSection({ title, updated, games, complete, teamNames, logoTeams }: {
+export function StandingsSection({ title, updated, games, complete, teamNames, logoTeams, belowTable }: {
   title: string;
   /** Fine print under the title. */
   updated: string;
@@ -131,6 +132,8 @@ export function StandingsSection({ title, updated, games, complete, teamNames, l
   complete: boolean;
   teamNames: ReadonlyMap<string, string>;
   logoTeams: ReadonlySet<string>;
+  /** Shown between the table and the legend. */
+  belowTable?: ReactNode;
 }) {
   const counted = selectCountedGames(games);
   const rows = computeStandings(games);
@@ -226,6 +229,7 @@ export function StandingsSection({ title, updated, games, complete, teamNames, l
         </div>
       </div>
 
+      {belowTable}
       <footer className="flex flex-col gap-2 py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064] sm:flex-row sm:justify-between">
         <p>PTS Points · GC Games counted · GP Games played · W Wins · L Losses · OL Overtime losses · DIFF Goal differential</p>
         <p>PTS = 2 × W + OL</p>
