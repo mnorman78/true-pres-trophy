@@ -12,11 +12,11 @@ Clubs tied on points are ranked by:
 
 <!-- Keep in step with the sort order in computeStandings (lib/standings.ts). -->
 1. Head-to-head points among the tied clubs
-2. Goal differential
-3. Goals for
+2. Total wins
+3. Goal differential
 4. Regulation wins
 5. Regulation and overtime wins
-6. Total wins
+6. Goals for
 
 ## What is the difference between GC and GP?
 

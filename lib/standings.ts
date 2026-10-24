@@ -140,8 +140,8 @@ function tallyRows(results: readonly Result[], played: ReadonlyMap<string, numbe
 
 /**
  * Builds the standings table from raw games. Sorted by points, then among teams tied on points by
- * head-to-head points, goal difference, goals for, regulation wins, regulation + overtime wins,
- * total wins, and finally abbreviation (only so the order is stable; not a published tiebreaker).
+ * head-to-head points, total wins, goal difference, regulation wins, regulation + overtime wins,
+ * goals for, and finally abbreviation (only so the order is stable; not a published tiebreaker).
  * Keep the "What are the tiebreakers?" list in FAQ.md in step with this order.
  */
 export function computeStandings(games: readonly Game[]): StandingsRow[] {
@@ -165,11 +165,11 @@ export function computeStandings(games: readonly Game[]): StandingsRow[] {
       return [...tied].sort(
         (a, b) =>
           h2h.get(b.team)! - h2h.get(a.team)! ||
+          b.w - a.w ||
           b.diff - a.diff ||
-          b.gf - a.gf ||
           b.rw - a.rw ||
           b.row - a.row ||
-          b.w - a.w ||
+          b.gf - a.gf ||
           a.team.localeCompare(b.team),
       );
     });

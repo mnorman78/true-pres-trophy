@@ -37,11 +37,11 @@ Each pair of clubs therefore contributes at most two games: one with each club a
 Clubs are ranked by points. Clubs tied on points are ranked by, in order:
 
 1. Head-to-head points among the tied clubs (in counted games between them)
-2. Goal differential
-3. Goals for
+2. Total wins
+3. Goal differential
 4. Regulation wins
 5. Regulation and overtime wins
-6. Total wins
+6. Goals for
 
 If clubs are still level after all six, they're listed alphabetically by abbreviation so the order is stable. That isn't treated as a tiebreaker.
 
