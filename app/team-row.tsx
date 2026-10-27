@@ -19,7 +19,7 @@ export function TeamRow({ team, rank, club, stats, details, columnCount }: {
 
   return (
     <>
-      <tr className="border-b border-[#c9beaa] bg-[#f2ead9] transition-colors last:border-0 hover:bg-[#e8ddc8]">
+      <tr data-team-row className="border-b border-[#c9beaa] bg-[#f2ead9] transition-colors last:border-0 hover:bg-[#e8ddc8]">
         <td className="sticky left-0 z-10 bg-inherit px-3 py-3 text-xs text-[#777064]">{rank}</td>
         <th scope="row" className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] p-0 text-left font-semibold">
           <button

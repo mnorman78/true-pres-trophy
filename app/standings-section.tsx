@@ -1,3 +1,4 @@
+import { StickyHeaderTable } from "@/app/sticky-header-table";
 import { TeamRow } from "@/app/team-row";
 import Image from "next/image";
 import type { ReactNode } from "react";
@@ -66,6 +67,61 @@ function SectionHeading({ title, note, updated }: {
         </p>
       )}
     </div>
+  );
+}
+
+/** Both copies of the table (sticky header, body) share this layout so their columns line up. */
+const TABLE_CLASS = "w-full min-w-[440px] table-fixed border-collapse text-sm tabular-nums";
+
+function TableColumns() {
+  return (
+    <colgroup>
+      <col className="w-14 max-sm:w-12" />
+      <col className="w-28 sm:w-72" />
+      {STAT_HEADINGS.map((heading) => (
+        <col key={heading} />
+      ))}
+    </colgroup>
+  );
+}
+
+/** The column headings; `srOnly` keeps them for screen readers but takes up no height. */
+function HeaderRow({ srOnly = false }: { srOnly?: boolean }) {
+  if (srOnly) {
+    return (
+      <tr>
+        {["RK", "Club", ...STAT_HEADINGS].map((heading) => (
+          <th key={heading} scope="col" className="p-0">
+            <span className="sr-only">{heading}</span>
+          </th>
+        ))}
+      </tr>
+    );
+  }
+  return (
+    <tr className="bg-[#17211d] text-[#f2ead9]">
+      <th
+        scope="col"
+        className="sticky left-0 z-10 bg-inherit px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
+      >
+        RK
+      </th>
+      <th
+        scope="col"
+        className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
+      >
+        Club
+      </th>
+      {STAT_HEADINGS.map((heading) => (
+        <th
+          key={heading}
+          scope="col"
+          className="px-3 py-3 text-right text-[10px] font-bold uppercase tracking-[0.15em]"
+        >
+          {heading}
+        </th>
+      ))}
+    </tr>
   );
 }
 
@@ -157,97 +213,84 @@ export function StandingsSection({
     <section className={tightTop ? "pt-3" : "pt-8 sm:pt-10"} aria-labelledby="standings-title">
       <SectionHeading title={title} note={seasonNote(counted, rows)} updated={updated} />
 
-      <div className="overflow-hidden border-y-2 border-[#17211d]">
-        <div className="overflow-x-auto">
-          {/* Fixed layout: RK and Club keep their widths and the stat columns share the rest equally. */}
-          <table className="w-full min-w-[440px] table-fixed border-collapse text-sm tabular-nums">
+      <StickyHeaderTable
+        header={
+          <table className={TABLE_CLASS}>
+            <TableColumns />
             <thead>
-              <tr className="bg-[#17211d] text-[#f2ead9]">
-                <th
-                  scope="col"
-                  className="sticky left-0 z-10 bg-inherit w-14 px-3 max-sm:w-12 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
-                >
-                  RK
-                </th>
-                <th
-                  scope="col"
-                  className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] w-28 px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em] sm:w-72"
-                >
-                  Club
-                </th>
-                {STAT_HEADINGS.map((heading) => (
-                  <th
-                    key={heading}
-                    scope="col"
-                    className="px-3 py-3 text-right text-[10px] font-bold uppercase tracking-[0.15em]"
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
+              <HeaderRow />
             </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={2 + STAT_HEADINGS.length} className="px-3 py-8 text-center text-[#6e685c]">
-                    No completed regular-season games found in <code>data/games/</code>.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row, index) => (
-                  <TeamRow
-                    key={row.team}
-                    team={row.team}
-                    columnCount={2 + STAT_HEADINGS.length}
-                    rank={String(index + 1).padStart(2, "0")}
-                    club={
-                      <span className="flex items-center">
-                        {/* NHL logos share a 960×640 canvas, so a 3:2 box sizes them all alike. */}
-                        <span className="mr-2 inline-block h-5 w-[30px] shrink-0">
-                          {logoTeams.has(row.team) && (
-                            <Image
-                              src={`/logos/${row.team}.svg`}
-                              alt=""
-                              width={30}
-                              height={20}
-                              unoptimized
-                            />
-                          )}
-                        </span>
-                        <span className="mr-4 inline-block w-8 shrink-0 text-[10px] font-bold tracking-[0.1em] text-[#9e3028] max-sm:mr-0">
-                          {row.team}
-                          {row.team === presidentsTrophyWinner && (
-                            <>
-                              <span aria-hidden="true">*</span>
-                              <span className="sr-only"> (won the NHL’s Presidents’ Trophy)</span>
-                            </>
-                          )}
-                        </span>
-                        {/* Phones show only the abbreviation; the name stays available to screen readers. */}
-                        <span className="max-sm:sr-only">{teamNames.get(row.team) ?? row.team}</span>
-                      </span>
-                    }
-                    stats={
-                      <>
-                        <td className="px-3 py-3 text-right font-bold text-[#17211d]">{row.pts}</td>
-                        <td className="px-3 py-3 text-right text-[#615c52]">{row.gp}</td>
-                        <td className="px-3 py-3 text-right text-[#615c52]">{row.played}</td>
-                        <td className="px-3 py-3 text-right text-[#615c52]">{row.w}</td>
-                        <td className="px-3 py-3 text-right text-[#615c52]">{row.l}</td>
-                        <td className="px-3 py-3 text-right text-[#615c52]">{row.ol}</td>
-                        <td className="px-3 py-3 text-right text-[#615c52]">{formatDiff(row.diff)}</td>
-                      </>
-                    }
-                    details={
-                      <UncountedGames team={row.team} games={uncounted.get(row.team) ?? []} complete={complete} />
-                    }
-                  />
-                ))
-              )}
-            </tbody>
           </table>
-        </div>
-      </div>
+        }
+      >
+        {/* Fixed layout: RK and Club keep their widths and the stat columns share the rest equally. */}
+        <table className={TABLE_CLASS}>
+          <TableColumns />
+          {/* The visible header is the sticky copy above; this one is for screen readers. */}
+          <thead>
+            <HeaderRow srOnly />
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={2 + STAT_HEADINGS.length} className="px-3 py-8 text-center text-[#6e685c]">
+                  No completed regular-season games found in <code>data/games/</code>.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, index) => (
+                <TeamRow
+                  key={row.team}
+                  team={row.team}
+                  columnCount={2 + STAT_HEADINGS.length}
+                  rank={String(index + 1).padStart(2, "0")}
+                  club={
+                    <span className="flex items-center">
+                      {/* NHL logos share a 960×640 canvas, so a 3:2 box sizes them all alike. */}
+                      <span className="mr-2 inline-block h-5 w-[30px] shrink-0">
+                        {logoTeams.has(row.team) && (
+                          <Image
+                            src={`/logos/${row.team}.svg`}
+                            alt=""
+                            width={30}
+                            height={20}
+                            unoptimized
+                          />
+                        )}
+                      </span>
+                      <span className="mr-4 inline-block w-8 shrink-0 text-[10px] font-bold tracking-[0.1em] text-[#9e3028] max-sm:mr-0">
+                        {row.team}
+                        {row.team === presidentsTrophyWinner && (
+                          <>
+                            <span aria-hidden="true">*</span>
+                            <span className="sr-only"> (won the NHL’s Presidents’ Trophy)</span>
+                          </>
+                        )}
+                      </span>
+                      {/* Phones show only the abbreviation; the name stays available to screen readers. */}
+                      <span className="max-sm:sr-only">{teamNames.get(row.team) ?? row.team}</span>
+                    </span>
+                  }
+                  stats={
+                    <>
+                      <td className="px-3 py-3 text-right font-bold text-[#17211d]">{row.pts}</td>
+                      <td className="px-3 py-3 text-right text-[#615c52]">{row.gp}</td>
+                      <td className="px-3 py-3 text-right text-[#615c52]">{row.played}</td>
+                      <td className="px-3 py-3 text-right text-[#615c52]">{row.w}</td>
+                      <td className="px-3 py-3 text-right text-[#615c52]">{row.l}</td>
+                      <td className="px-3 py-3 text-right text-[#615c52]">{row.ol}</td>
+                      <td className="px-3 py-3 text-right text-[#615c52]">{formatDiff(row.diff)}</td>
+                    </>
+                  }
+                  details={
+                    <UncountedGames team={row.team} games={uncounted.get(row.team) ?? []} complete={complete} />
+                  }
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </StickyHeaderTable>
 
       {belowTable}
       <footer className="flex flex-col gap-2 py-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#777064] sm:flex-row sm:justify-between">
