@@ -91,7 +91,9 @@ function HeaderRow({ srOnly = false }: { srOnly?: boolean }) {
     return (
       <tr>
         {["RK", "Club", ...STAT_HEADINGS].map((heading) => (
-          <th key={heading} scope="col" className="p-0">
+          // Relative, so the absolutely positioned sr-only text stays inside the sideways-scroll box
+          // instead of widening the page on phones (which breaks the sticky header on Android).
+          <th key={heading} scope="col" className="relative p-0">
             <span className="sr-only">{heading}</span>
           </th>
         ))}
