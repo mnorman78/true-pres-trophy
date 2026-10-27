@@ -5,8 +5,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 /**
  * A table whose header stays at the top of the window until the last team's row reaches it, then
  * scrolls off with that row. Sticky positioning can't escape the sideways-scrolling box phones need,
- * so the visible header is a separate table above that box, kept at the same sideways scroll
- * position as the body.
+ * so the visible header is a separate table above that box. It follows the body's sideways scroll
+ * by shifting, not scrolling: Chrome on Android stops updating a sticky element during page scroll
+ * when it is itself a scroll container. Header cells that should stay put on sideways scroll
+ * shift back with `translate-x-(--scroll-x)`.
  */
 export function StickyHeaderTable({ header, children }: {
   /** A table with the same columns as `children`, shown as the header (hidden from screen readers). */
@@ -39,17 +41,17 @@ export function StickyHeaderTable({ header, children }: {
       <div
         ref={headerRef}
         aria-hidden="true"
-        className="sticky top-0 z-20 overflow-hidden"
+        className="sticky top-0 z-20 overflow-clip [--scroll-x:0px]"
         style={{ marginBottom: lastRowSpan }}
       >
-        {header}
+        <div className="-translate-x-(--scroll-x)">{header}</div>
       </div>
       <div
         ref={bodyRef}
         className="overflow-x-auto"
         style={{ marginTop: -lastRowSpan }}
         onScroll={(event) => {
-          if (headerRef.current) headerRef.current.scrollLeft = event.currentTarget.scrollLeft;
+          headerRef.current?.style.setProperty("--scroll-x", `${event.currentTarget.scrollLeft}px`);
         }}
       >
         {children}

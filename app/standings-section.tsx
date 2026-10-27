@@ -102,13 +102,13 @@ function HeaderRow({ srOnly = false }: { srOnly?: boolean }) {
     <tr className="bg-[#17211d] text-[#f2ead9]">
       <th
         scope="col"
-        className="sticky left-0 z-10 bg-inherit px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
+        className="relative z-10 translate-x-(--scroll-x) bg-inherit px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
       >
         RK
       </th>
       <th
         scope="col"
-        className="sticky left-14 z-10 max-sm:left-12 bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
+        className="relative z-10 translate-x-(--scroll-x) bg-inherit max-sm:shadow-[inset_-1px_0_0_#c9beaa] px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.15em]"
       >
         Club
       </th>
