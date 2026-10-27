@@ -26,7 +26,7 @@ export function Intro() {
     <section className="border-b border-[#b9ad97] py-8 sm:py-10 in-data-[intro=collapsed]:py-4 sm:in-data-[intro=collapsed]:py-5">
       <p
         id="intro-text"
-        className="text-lg leading-relaxed text-[#35403b] sm:text-xl in-data-[intro=collapsed]:hidden"
+        className="text-base leading-relaxed text-[#35403b] sm:text-xl in-data-[intro=collapsed]:hidden"
       >
         The NHL Presidents’ Trophy has never been respected, partially because the standings
         can’t account for teams’ strength of schedule differences. These standings fix that by
