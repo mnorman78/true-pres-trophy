@@ -2,6 +2,7 @@
 # If the fetch script's data checks fail, nothing is deployed and the live site keeps the last good table.
 # When a regular season finishes, the fetch script saves it to data/seasons/ and this workflow commits
 # that file to main, so the season's archive page survives after the site moves on to the next season.
+# On Fridays it also saves a copy of the standings page to a separate private repository (never on the site).
 name: Deploy to GitHub Pages
 
 on:
@@ -11,6 +12,11 @@ on:
     # Daily at 08:00 UTC (4 AM Eastern in summer time, 3 AM in winter), after the previous night's games have finished.
     - cron: "0 8 * * *"
   workflow_dispatch:
+    inputs:
+      snapshot:
+        description: Also save a standings snapshot to the private repository (normally Fridays only)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -49,6 +55,38 @@ jobs:
             git push origin HEAD:main
           fi
       - run: npm run build
+      # Weekly snapshots: the scheduled Friday run (3–4 AM Eastern) saves a self-contained copy of the
+      # standings page to the private snapshots repo, one file per week, never overwritten or removed.
+      # Needs the SNAPSHOTS_TOKEN secret (a fine-grained token with Contents: read and write on that
+      # repo). A failure here never blocks the deploy; a missed week can be saved with a manual run.
+      - name: Decide whether to save a snapshot
+        id: snapshot
+        run: |
+          if { [ "${{ github.event_name }}" = schedule ] && [ "$(date -u +%u)" = 5 ]; } || [ "${{ inputs.snapshot }}" = true ]; then
+            echo "take=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check out the snapshots repo
+        id: snapshots-checkout
+        if: steps.snapshot.outputs.take == 'true'
+        continue-on-error: true
+        uses: actions/checkout@v7
+        with:
+          repository: mnorman78/true-pres-trophy-snapshots
+          token: ${{ secrets.SNAPSHOTS_TOKEN }}
+          path: snapshots
+      - name: Save the standings snapshot
+        if: steps.snapshots-checkout.outcome == 'success'
+        continue-on-error: true
+        run: |
+          node scripts/snapshot-standings.ts snapshots
+          cd snapshots
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Standings snapshot for $(TZ=America/New_York date +%F)"
+            git push
+          fi
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
